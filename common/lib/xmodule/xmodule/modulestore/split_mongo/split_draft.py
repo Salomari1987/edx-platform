@@ -444,8 +444,17 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
                 )
                 block = self._get_block_from_structure(new_structure, root_block_id)
                 for child_block_id in block.fields.get('children', []):
-                    copy_from_published(child_block_id)
-
+                    item_key = draft_course_key.make_usage_key(child_block_id.type, child_block_id.id)
+                    item = self.get_item(item_key)
+                    item_parent_location = unicode(item.parent.for_branch(None))
+                    if item_parent_location and item_parent_location != unicode(location):
+                        # If an item parent is different than the current parent then it means it is moved.
+                        # Remove item from the list of children of moved parent children.
+                        parent_item = item.get_parent()
+                        parent_item.children.remove(item.location)
+                        self.update_item(parent_item, user_id)
+                    else:
+                        copy_from_published(child_block_id)
             copy_from_published(BlockKey.from_usage_key(location))
 
             # update course structure and index
