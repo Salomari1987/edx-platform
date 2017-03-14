@@ -861,9 +861,19 @@ class TestMoveItem(ItemTest):
         self.assertEqual(response['move_source_locator'], unicode(source_usage_key))
         self.assertEqual(response['parent_locator'], unicode(target_usage_key))
         self.assertEqual(response['source_index'], expected_index)
+
+        # Verify parent referance has been changed now.
         new_parent_loc = self.store.get_parent_location(source_usage_key)
+        source_item = self.get_item_from_modulestore(source_usage_key)
+        self.assertEqual(source_item.parent, new_parent_loc)
         self.assertEqual(new_parent_loc, target_usage_key)
         self.assertNotEqual(parent_loc, new_parent_loc)
+
+        # Assert item is present in children list of target parent and not source parent
+        target_parent = self.get_item_from_modulestore(target_usage_key)
+        source_parent = self.get_item_from_modulestore(parent_loc)
+        self.assertTrue(source_usage_key in target_parent.children)
+        self.assertFalse(source_usage_key in source_parent.children)
 
     @ddt.data(ModuleStoreEnum.Type.mongo, ModuleStoreEnum.Type.split)
     def test_move_component(self, store_type):
@@ -1143,6 +1153,58 @@ class TestMoveItem(ItemTest):
             unicode(self.vert2_usage_key),
             insert_at
         )
+
+    @ddt.data(ModuleStoreEnum.Type.mongo, ModuleStoreEnum.Type.split)
+    def test_move_and_discard_changes(self, store_type):
+        """
+        Test that discard changes operation works as expected after a move operation bring back the component back.
+
+        Arguments:
+            store_type (ModuleStoreEnum.Type): Type of modulestore to create test course in.
+        """
+        self.setup_course(default_store=store_type)
+
+        parent_loc = self.store.get_parent_location(self.html_usage_key)
+
+        # Check that parent_loc is not yet published.
+        self.assertFalse(self.store.has_item(parent_loc, revision=ModuleStoreEnum.RevisionOption.published_only))
+
+        # Publish parent_loc unit
+        self.client.ajax_post(
+            reverse_usage_url("xblock_handler", parent_loc),
+            data={'publish': 'make_public'}
+        )
+
+        # Check that parent_loc is now published.
+        self.assertTrue(self.store.has_item(parent_loc, revision=ModuleStoreEnum.RevisionOption.published_only))
+        self.assertFalse(self.store.has_changes(self.store.get_item(parent_loc)))
+
+        # Move component html_usage_key in vert2_usage_key
+        self.assert_move_item(self.html_usage_key, self.vert2_usage_key)
+
+        # Check parent_loc becomes in draft mode now.
+        self.assertTrue(self.store.has_changes(self.store.get_item(parent_loc)))
+
+        # Now discard changes in parent_loc
+        self.client.ajax_post(
+            reverse_usage_url("xblock_handler", parent_loc),
+            data={'publish': 'discard_changes'}
+        )
+
+        # Check that parent_loc now is reverted to publish. Changes discarded, html_usage_key moved back.
+        self.assertTrue(self.store.has_item(parent_loc, revision=ModuleStoreEnum.RevisionOption.published_only))
+        self.assertFalse(self.store.has_changes(self.store.get_item(parent_loc)))
+
+        # Now parent should be in the original parent back.
+        source_item = self.get_item_from_modulestore(self.html_usage_key)
+        self.assertEqual(source_item.parent, parent_loc)
+        self.assertEqual(self.store.get_parent_location(self.html_usage_key), source_item.parent)
+
+        # Also, check that item is not present in target parent but in source parent
+        target_parent = self.get_item_from_modulestore(self.vert2_usage_key)
+        source_parent = self.get_item_from_modulestore(parent_loc)
+        self.assertTrue(self.html_usage_key in source_parent.children)
+        self.assertFalse(self.html_usage_key in target_parent.children)
 
 
 class TestDuplicateItemWithAsides(ItemTest, DuplicateHelper):

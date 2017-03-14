@@ -483,7 +483,7 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
                 parent_item.children.remove(item.location)
                 self.update_item(parent_item, user_id)
 
-            # TODO: check item.parent changed? No, update parent as well.
+            # Update parent attribute of the item block
             item.parent = source_parent_location
             self.update_item(item, user_id)
 

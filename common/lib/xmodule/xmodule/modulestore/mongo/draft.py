@@ -807,6 +807,7 @@ class DraftModuleStore(MongoModuleStore):
                     child_loc = Location.from_deprecated_string(child)
                     delete_draft_only(child_loc)
 
+        # TODO: check here if child is moved, if yes then update it's parent.
         delete_draft_only(location)
 
     def _query_children_for_cache_children(self, course_key, items):
