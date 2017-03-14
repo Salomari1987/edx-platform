@@ -444,17 +444,11 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
                 )
                 block = self._get_block_from_structure(new_structure, root_block_id)
                 for child_block_id in block.fields.get('children', []):
-                    item_key = draft_course_key.make_usage_key(child_block_id.type, child_block_id.id)
-                    item = self.get_item(item_key)
-                    item_parent_location = unicode(item.parent.for_branch(None))
-                    if item_parent_location and item_parent_location != unicode(location):
-                        # If an item parent is different than the current parent then it means it is moved.
-                        # Remove item from the list of children of moved parent children.
-                        parent_item = item.get_parent()
-                        parent_item.children.remove(item.location)
-                        self.update_item(parent_item, user_id)
-                    else:
-                        copy_from_published(child_block_id)
+                    copy_from_published(child_block_id)
+
+                # If block is not the main container being discarded.
+                if root_block_id != BlockKey.from_usage_key(location):
+                    self.remove_reference_if_moved(root_block_id, location, user_id)
             copy_from_published(BlockKey.from_usage_key(location))
 
             # update course structure and index
@@ -462,6 +456,29 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
             index_entry = self._get_index_if_valid(draft_course_key)
             if index_entry is not None:
                 self._update_head(draft_course_key, index_entry, ModuleStoreEnum.BranchName.draft, new_structure['_id'])
+
+    def remove_reference_if_moved(self, block, source_parent_location, user_id):
+        """
+        Removes moved block reference from children list of it's moved parent.
+
+        Arguments:
+            block (BlockData)                               : Item block data.
+            source_parent_location (BlockUsageLocator)      : Original parent block locator.
+            user_id (int)                                   : User id
+        """
+        item_key = source_parent_location.course_key.make_usage_key(block.type, block.id)
+        try:
+            item = self.get_item(item_key)
+        except ItemNotFoundError:
+            # return if item is not in the published version.
+            return
+        item_parent_location = unicode(item.parent.for_branch(None))
+        if item_parent_location and item_parent_location != unicode(source_parent_location):
+            # If an item parent is different than the current parent then it means it is moved.
+            # Remove item from the list of children of moved parent children.
+            parent_item = item.get_parent()
+            parent_item.children.remove(item.location)
+            self.update_item(parent_item, user_id)
 
     def force_publish_course(self, course_locator, user_id, commit=False):
         """
