@@ -772,6 +772,12 @@ def _move_item(source_usage_key, target_parent_usage_key, user, target_index=Non
         target_parent.children.insert(insert_at, source_item.location)
         store.update_item(target_parent, user.id)
 
+        # TODO: check item's parent changed, if not change it here
+        # Change source item's parent location as well.
+        # from nose.tools import set_trace;set_trace()
+        # source_item.parent = target_parent_usage_key
+        # store.update_item(source_item, user.id)
+
         log.info(
             'MOVE: %s moved from %s to %s at %d index',
             unicode(source_usage_key),

@@ -470,6 +470,7 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
         try:
             item = self.get_item(item_key)
         except ItemNotFoundError:
+            # TODO: why this happens.
             # return if item is not in the published version.
             return
         item_parent_location = unicode(item.parent.for_branch(None))
@@ -477,8 +478,14 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
             # If an item parent is different than the current parent then it means it is moved.
             # Remove item from the list of children of moved parent children.
             parent_item = item.get_parent()
-            parent_item.children.remove(item.location)
-            self.update_item(parent_item, user_id)
+
+            if item.location in parent_item.children:
+                parent_item.children.remove(item.location)
+                self.update_item(parent_item, user_id)
+
+            # TODO: check item.parent changed? No, update parent as well.
+            item.parent = source_parent_location
+            self.update_item(item, user_id)
 
     def force_publish_course(self, course_locator, user_id, commit=False):
         """
