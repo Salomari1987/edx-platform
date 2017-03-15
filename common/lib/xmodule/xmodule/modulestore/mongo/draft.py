@@ -796,6 +796,12 @@ class DraftModuleStore(MongoModuleStore):
             # If 2 versions versions exist, we can assume one is a published version. Go ahead and do the delete
             # of the draft version.
             if versions_found.count() > 1:
+                published_version = filter(
+                    lambda x: x.get('_id').get('revision') != MongoRevisionKey.draft,
+                    versions_found
+                )[0]
+                for child_loc in published_version.get('definition', {}).get('children', []):
+                    self.remove_reference_if_moved(child_loc, location, user_id)
                 self._delete_subtree(root_location, [as_draft], draft_only=True)
             elif versions_found.count() == 1:
                 # Since this method cannot be called on something in DIRECT_ONLY_CATEGORIES and we call
@@ -804,11 +810,41 @@ class DraftModuleStore(MongoModuleStore):
                 item = versions_found[0]
                 assert item.get('_id').get('revision') != MongoRevisionKey.draft
                 for child in item.get('definition', {}).get('children', []):
+                    # TODO: check if we need to call remove_reference_if_moved here as well?
                     child_loc = Location.from_deprecated_string(child)
                     delete_draft_only(child_loc)
 
-        # TODO: check here if child is moved, if yes then update it's parent.
         delete_draft_only(location)
+
+    def remove_reference_if_moved(self, block_key, source_parent_location, user_id):
+        """
+        Removes moved block reference from children list of it's moved parent.
+
+        Arguments:
+            block_key (String)                              : Item location key string.
+            source_parent_location (BlockUsageLocator)      : Original parent block locator.
+            user_id (int)                                   : User id
+        """
+        item_key = source_parent_location.course_key.make_usage_key_from_deprecated_string(block_key)
+        try:
+            item = self.get_item(item_key)
+        except ItemNotFoundError:
+            # TODO: why this happens.
+            # return if item is not in the published version.
+            return
+        item_parent_location = unicode(item.parent.for_branch(None))
+        if item_parent_location and item_parent_location != unicode(source_parent_location):
+            # If an item parent is different than the current parent then it means it is moved.
+            # Remove item from the list of children of moved parent children.
+            parent_item = item.get_parent()
+
+            if item.location in parent_item.children:
+                parent_item.children.remove(item.location)
+                self.update_item(parent_item, user_id)
+
+            # Update parent attribute of the item block
+            item.parent = source_parent_location
+            self.update_item(item, user_id)
 
     def _query_children_for_cache_children(self, course_key, items):
         # first get non-draft in a round-trip

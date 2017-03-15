@@ -733,8 +733,8 @@ def _move_item(source_usage_key, target_parent_usage_key, user, target_index=Non
                 source_type=source_type,
                 target_parent_type=target_parent_type,
             )
-        elif source_parent.location == target_parent.location:
-            error = _('You can not move an item into the same parent.')
+        elif source_parent.location == target_parent.location or source_item.location in target_parent.children:
+            error = _('Item is already present in target location.')
         elif source_item.location == target_parent.location:
             error = _('You can not move an item into itself.')
         elif is_source_item_in_target_parents(source_item, target_parent):
