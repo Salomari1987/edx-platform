@@ -448,7 +448,8 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
 
                 # If block is not the main container being discarded.
                 if root_block_id != BlockKey.from_usage_key(location):
-                    self.remove_reference_if_moved(root_block_id, location, user_id)
+                    block_key = location.course_key.make_usage_key(root_block_id.type, root_block_id.id)
+                    self.remove_reference_if_moved(block_key, location, user_id)
             copy_from_published(BlockKey.from_usage_key(location))
 
             # update course structure and index
@@ -457,21 +458,18 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
             if index_entry is not None:
                 self._update_head(draft_course_key, index_entry, ModuleStoreEnum.BranchName.draft, new_structure['_id'])
 
-    def remove_reference_if_moved(self, block, source_parent_location, user_id):
+    def remove_reference_if_moved(self, item_key, source_parent_location, user_id):
         """
         Removes moved block reference from children list of it's moved parent.
 
         Arguments:
-            block (BlockData)                               : Item block data.
+            item_key (BlockUsageLocator)                    : Locator of item.
             source_parent_location (BlockUsageLocator)      : Original parent block locator.
             user_id (int)                                   : User id
         """
-        item_key = source_parent_location.course_key.make_usage_key(block.type, block.id)
         try:
             item = self.get_item(item_key)
         except ItemNotFoundError:
-            # TODO: why this happens.
-            # return if item is not in the published version.
             return
         item_parent_location = unicode(item.parent.for_branch(None))
         if item_parent_location and item_parent_location != unicode(source_parent_location):

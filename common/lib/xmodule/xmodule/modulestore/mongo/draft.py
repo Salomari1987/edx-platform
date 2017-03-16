@@ -799,8 +799,9 @@ class DraftModuleStore(MongoModuleStore):
                 versions_found
             )[0]
             for child_loc in published_version.get('definition', {}).get('children', []):
-                self.remove_reference_if_moved(child_loc, location, user_id, delete_draft_only)
-                if total_versions_found == 1:
+                item_key = location.course_key.make_usage_key_from_deprecated_string(child_loc)
+                item_moved_loc = self.remove_reference_if_moved(item_key, location, user_id)
+                if total_versions_found == 1 or item_moved_loc:
                     # Since this method cannot be called on something in DIRECT_ONLY_CATEGORIES and we call
                     # delete_subtree as soon as we find an item with a draft version, if there is only 1 version
                     # it must be published (since adding a child to a published item creates a draft of the parent).
@@ -813,21 +814,21 @@ class DraftModuleStore(MongoModuleStore):
 
         delete_draft_only(location)
 
-    def remove_reference_if_moved(self, block_key, source_parent_location, user_id, delete_draft_only):
+    def remove_reference_if_moved(self, item_key, source_parent_location, user_id):
         """
         Removes moved block reference from children list of it's moved parent.
 
         Arguments:
-            block_key (String)                              : Item location key string.
+            item_key (BlockUsageLocator)                    : Locator of item.
             source_parent_location (BlockUsageLocator)      : Original parent block locator.
             user_id (int)                                   : User id
+
+        Returns:
+           location                                         : Locator of item.
         """
-        item_key = source_parent_location.course_key.make_usage_key_from_deprecated_string(block_key)
         try:
             item = self.get_item(item_key)
         except ItemNotFoundError:
-            # TODO: why this happens.
-            # return if item is not in the published version.
             return
         item_parent_location = unicode(item.parent.for_branch(None))
         if item_parent_location and item_parent_location != unicode(source_parent_location):
@@ -843,8 +844,7 @@ class DraftModuleStore(MongoModuleStore):
             item.parent = source_parent_location
             self.update_item(item, user_id)
 
-            # Delete draft version of the block.
-            delete_draft_only(Location.from_deprecated_string(block_key))
+            return item.location
 
     def _query_children_for_cache_children(self, course_key, items):
         # first get non-draft in a round-trip

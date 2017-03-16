@@ -872,8 +872,8 @@ class TestMoveItem(ItemTest):
         # Assert item is present in children list of target parent and not source parent
         target_parent = self.get_item_from_modulestore(target_usage_key)
         source_parent = self.get_item_from_modulestore(parent_loc)
-        self.assertTrue(source_usage_key in target_parent.children)
-        self.assertFalse(source_usage_key in source_parent.children)
+        self.assertIn(source_usage_key, target_parent.children)
+        self.assertNotIn(source_usage_key, source_parent.children)
 
     @ddt.data(ModuleStoreEnum.Type.mongo, ModuleStoreEnum.Type.split)
     def test_move_component(self, store_type):
@@ -1203,8 +1203,8 @@ class TestMoveItem(ItemTest):
         # Also, check that item is not present in target parent but in source parent
         target_parent = self.get_item_from_modulestore(self.vert2_usage_key)
         source_parent = self.get_item_from_modulestore(parent_loc)
-        self.assertTrue(self.html_usage_key in source_parent.children)
-        self.assertFalse(self.html_usage_key in target_parent.children)
+        self.assertIn(self.html_usage_key, source_parent.children)
+        self.assertNotIn(self.html_usage_key, target_parent.children)
 
 
 class TestDuplicateItemWithAsides(ItemTest, DuplicateHelper):
