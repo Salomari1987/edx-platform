@@ -1193,8 +1193,7 @@ class TestMoveItem(ItemTest):
 
         # Check that parent_loc now is reverted to publish. Changes discarded, html_usage_key moved back.
         self.assertTrue(self.store.has_item(parent_loc, revision=ModuleStoreEnum.RevisionOption.published_only))
-        # TODO: why has this unit still changes left in mongo
-        # self.assertFalse(self.store.has_changes(self.store.get_item(parent_loc)))
+        self.assertFalse(self.store.has_changes(self.store.get_item(parent_loc)))
 
         # Now parent should be in the original parent back.
         source_item = self.get_item_from_modulestore(self.html_usage_key)

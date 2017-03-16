@@ -793,30 +793,27 @@ class DraftModuleStore(MongoModuleStore):
             versions_found = self.collection.find(
                 query, {'_id': True, 'definition.children': True}, sort=[SORT_REVISION_FAVOR_DRAFT]
             )
+            total_versions_found = versions_found.count()
+            published_version = filter(
+                lambda x: x.get('_id').get('revision') != MongoRevisionKey.draft,
+                versions_found
+            )[0]
+            for child_loc in published_version.get('definition', {}).get('children', []):
+                self.remove_reference_if_moved(child_loc, location, user_id, delete_draft_only)
+                if total_versions_found == 1:
+                    # Since this method cannot be called on something in DIRECT_ONLY_CATEGORIES and we call
+                    # delete_subtree as soon as we find an item with a draft version, if there is only 1 version
+                    # it must be published (since adding a child to a published item creates a draft of the parent).
+                    delete_draft_only(Location.from_deprecated_string(child_loc))
+
             # If 2 versions versions exist, we can assume one is a published version. Go ahead and do the delete
             # of the draft version.
-            if versions_found.count() > 1:
-                published_version = filter(
-                    lambda x: x.get('_id').get('revision') != MongoRevisionKey.draft,
-                    versions_found
-                )[0]
-                for child_loc in published_version.get('definition', {}).get('children', []):
-                    self.remove_reference_if_moved(child_loc, location, user_id)
+            if total_versions_found > 1:
                 self._delete_subtree(root_location, [as_draft], draft_only=True)
-            elif versions_found.count() == 1:
-                # Since this method cannot be called on something in DIRECT_ONLY_CATEGORIES and we call
-                # delete_subtree as soon as we find an item with a draft version, if there is only 1 version
-                # it must be published (since adding a child to a published item creates a draft of the parent).
-                item = versions_found[0]
-                assert item.get('_id').get('revision') != MongoRevisionKey.draft
-                for child in item.get('definition', {}).get('children', []):
-                    # TODO: check if we need to call remove_reference_if_moved here as well?
-                    child_loc = Location.from_deprecated_string(child)
-                    delete_draft_only(child_loc)
 
         delete_draft_only(location)
 
-    def remove_reference_if_moved(self, block_key, source_parent_location, user_id):
+    def remove_reference_if_moved(self, block_key, source_parent_location, user_id, delete_draft_only):
         """
         Removes moved block reference from children list of it's moved parent.
 
@@ -845,6 +842,9 @@ class DraftModuleStore(MongoModuleStore):
             # Update parent attribute of the item block
             item.parent = source_parent_location
             self.update_item(item, user_id)
+
+            # Delete draft version of the block.
+            delete_draft_only(Location.from_deprecated_string(block_key))
 
     def _query_children_for_cache_children(self, course_key, items):
         # first get non-draft in a round-trip
