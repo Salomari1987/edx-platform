@@ -458,33 +458,6 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
             if index_entry is not None:
                 self._update_head(draft_course_key, index_entry, ModuleStoreEnum.BranchName.draft, new_structure['_id'])
 
-    def remove_reference_if_moved(self, item_key, source_parent_location, user_id):
-        """
-        Removes moved block reference from children list of it's moved parent.
-
-        Arguments:
-            item_key (BlockUsageLocator)                    : Locator of item.
-            source_parent_location (BlockUsageLocator)      : Original parent block locator.
-            user_id (int)                                   : User id
-        """
-        try:
-            item = self.get_item(item_key)
-        except ItemNotFoundError:
-            return
-        item_parent_location = unicode(item.parent.for_branch(None))
-        if item_parent_location and item_parent_location != unicode(source_parent_location):
-            # If an item parent is different than the current parent then it means it is moved.
-            # Remove item from the list of children of moved parent children.
-            parent_item = item.get_parent()
-
-            if item.location in parent_item.children:
-                parent_item.children.remove(item.location)
-                self.update_item(parent_item, user_id)
-
-            # Update parent attribute of the item block
-            item.parent = source_parent_location
-            self.update_item(item, user_id)
-
     def force_publish_course(self, course_locator, user_id, commit=False):
         """
         Helper method to forcefully publish a course,
