@@ -444,12 +444,10 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
                 )
                 block = self._get_block_from_structure(new_structure, root_block_id)
                 for child_block_id in block.fields.get('children', []):
+                    item_location = location.course_key.make_usage_key(child_block_id.type, child_block_id.id)
+                    original_parent_location = location.course_key.make_usage_key(root_block_id.type, root_block_id.id)
+                    self.update_parent_if_moved(item_location, original_parent_location, new_structure, user_id)
                     copy_from_published(child_block_id)
-
-                # If block is not the main container being discarded.
-                if root_block_id != BlockKey.from_usage_key(location):
-                    block_key = location.course_key.make_usage_key(root_block_id.type, root_block_id.id)
-                    self.remove_reference_if_moved(block_key, location, user_id)
             copy_from_published(BlockKey.from_usage_key(location))
 
             # update course structure and index
@@ -457,6 +455,27 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
             index_entry = self._get_index_if_valid(draft_course_key)
             if index_entry is not None:
                 self._update_head(draft_course_key, index_entry, ModuleStoreEnum.BranchName.draft, new_structure['_id'])
+
+    def update_parent_if_moved(self, item_location, original_parent_location, course_structure, user_id):
+        """
+        Update parent of an item if it has moved.
+
+        Arguments:
+            item_location (BlockUsageLocator)    : Locator of item.
+            original_parent_location (BlockUsageLocator)  : Original parent block locator.
+            course_structure (Structure)  : course structure of the course.
+            user_id (int)   : User id
+        """
+        parent_block_keys = self._get_parents_from_structure(BlockKey.from_usage_key(item_location), course_structure)
+        for block_key in parent_block_keys:
+            # Item's parent is different than its new parent - so it has moved.
+            if block_key.id != original_parent_location.block_id:
+                self.remove_update_item_parent(
+                    item_location=item_location,
+                    new_parent_location=original_parent_location,
+                    old_parent_location=original_parent_location.course_key.make_usage_key(block_key.type, block_key.id),
+                    user_id=user_id
+                )
 
     def force_publish_course(self, course_locator, user_id, commit=False):
         """

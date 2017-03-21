@@ -1157,7 +1157,8 @@ class TestMoveItem(ItemTest):
     @ddt.data(ModuleStoreEnum.Type.mongo, ModuleStoreEnum.Type.split)
     def test_move_and_discard_changes(self, store_type):
         """
-        Test that discard changes operation works as expected after a move operation bring back the component back.
+        Verifies that discard changes operation brings moved component back to source location and removes the component
+        from target location.
 
         Arguments:
             store_type (ModuleStoreEnum.Type): Type of modulestore to create test course in.

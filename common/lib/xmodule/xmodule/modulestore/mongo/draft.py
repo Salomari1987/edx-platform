@@ -793,28 +793,56 @@ class DraftModuleStore(MongoModuleStore):
             versions_found = self.collection.find(
                 query, {'_id': True, 'definition.children': True}, sort=[SORT_REVISION_FAVOR_DRAFT]
             )
-            total_versions_found = versions_found.count()
-            published_version = [
-                version
-                for version in versions_found
-                if version.get('_id').get('revision') != MongoRevisionKey.draft
-            ][0]
-            for child_loc in published_version.get('definition', {}).get('children', []):
-                item_key = location.course_key.make_usage_key_from_deprecated_string(child_loc)
-                item_moved_loc = self.remove_reference_if_moved(item_key, location, user_id)
-                if total_versions_found == 1 or item_moved_loc:
-                    # Since this method cannot be called on something in DIRECT_ONLY_CATEGORIES and we call
-                    # delete_subtree as soon as we find an item with a draft version, if there is only 1 version
-                    # it must be published (since adding a child to a published item creates a draft of the parent).
-                    # Also, when an item is moved, it also creates a draft just like addition and deletion.
-                    delete_draft_only(Location.from_deprecated_string(child_loc))
-
             # If 2 versions versions exist, we can assume one is a published version. Go ahead and do the delete
             # of the draft version.
-            if total_versions_found > 1:
+            if versions_found.count() > 1:
+                published_version = [
+                    version
+                    for version in versions_found
+                    if version.get('_id').get('revision') != MongoRevisionKey.draft
+                ]
+                if len(published_version) > 0:
+                    self.update_parent_if_moved(root_location, published_version[0], delete_draft_only, user_id)
                 self._delete_subtree(root_location, [as_draft], draft_only=True)
+            elif versions_found.count() == 1:
+                # Since this method cannot be called on something in DIRECT_ONLY_CATEGORIES and we call
+                # delete_subtree as soon as we find an item with a draft version, if there is only 1 version
+                # it must be published (since adding a child to a published item creates a draft of the parent).
+                item = versions_found[0]
+                assert item.get('_id').get('revision') != MongoRevisionKey.draft
+                for child in item.get('definition', {}).get('children', []):
+                    item_key = location.course_key.make_usage_key_from_deprecated_string(child)
+                    self.update_parent_if_moved(item_key, location, user_id)
+                    child_loc = Location.from_deprecated_string(child)
+                    delete_draft_only(child_loc)
 
         delete_draft_only(location)
+
+    def update_parent_if_moved(self, original_parent_location, published_version, delete_draft_only, user_id):
+        """
+        Update parent of an item if it has moved.
+
+        Arguments:
+            original_parent_location (BlockUsageLocator)  : Original parent block locator.
+            published_version (dict)   : Published version of the course.
+            delete_draft_only (function)    : A callback function to delete draft children if it was moved.
+            user_id (int)   : User id
+        """
+        for child_location in published_version.get('definition', {}).get('children', []):
+            item_location = original_parent_location.course_key.make_usage_key_from_deprecated_string(child_location)
+            try:
+                source_item = self.get_item(item_location)
+            except ItemNotFoundError:
+                log.error('Unable to find the item %s', unicode(item_location))
+                return
+            if source_item.parent and source_item.parent.block_id != original_parent_location.block_id:
+                if self.remove_update_item_parent(
+                    item_location=item_location,
+                    new_parent_location=original_parent_location,
+                    old_parent_location=source_item.parent,
+                    user_id=user_id
+                ):
+                    delete_draft_only(Location.from_deprecated_string(child_location))
 
     def _query_children_for_cache_children(self, course_key, items):
         # first get non-draft in a round-trip

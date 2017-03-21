@@ -3,12 +3,16 @@ This module provides an abstraction for Module Stores that support Draft and Pub
 """
 
 import threading
+import logging
 from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 from . import ModuleStoreEnum, BulkOperationsMixin
+from .exceptions import ItemNotFoundError
 
 # Things w/ these categories should never be marked as version=DRAFT
 DIRECT_ONLY_CATEGORIES = ['course', 'chapter', 'sequential', 'about', 'static_tab', 'course_info']
+
+log = logging.getLogger(__name__)
 
 
 class BranchSettingMixin(object):
@@ -134,37 +138,58 @@ class ModuleStoreDraftAndPublished(BranchSettingMixin, BulkOperationsMixin):
                 # We remove the branch, because publishing always means copying from draft to published
                 self.signal_handler.send("course_published", course_key=course_key.for_branch(None))
 
-    def remove_reference_if_moved(self, item_key, source_parent_location, user_id):
+    def remove_update_item_parent(self, item_location, new_parent_location, old_parent_location, user_id,
+                                  insert_at=None):
         """
-        Removes moved block reference from children list of it's moved parent.
+        Removes block reference for old parent and attacehs to new parent.
 
         Arguments:
-            item_key (BlockUsageLocator)                    : Locator of item.
-            source_parent_location (BlockUsageLocator)      : Original parent block locator.
-            user_id (int)                                   : User id
+            item_location (BlockUsageLocator)    : Locator of item.
+            new_parent_location (BlockUsageLocator)  : New parent block locator.
+            old_parent_location (BlockUsageLocator)  : Old parent block locator.
+            insert_at (int) : Insert item at the particular index in new parent.
+            user_id (int)   : User id
 
         Returns:
-           location                                         : Locator of item.
+           location or None:    source item location if updated otherwise None.
         """
         try:
-            item = self.get_item(item_key)
+            source_item = self.get_item(item_location)
+            old_parent_item = self.get_item(old_parent_location)
+            new_parent_item = self.get_item(new_parent_location)
         except ItemNotFoundError:
-            return
-        item_parent_location = unicode(item.parent.for_branch(None))
-        if item_parent_location and item_parent_location != unicode(source_parent_location):
-            # If an item parent is different than the current parent then it means it is moved.
-            # Remove item from the list of children of moved parent children.
-            parent_item = item.get_parent()
+            log.error('Unable to find the item %s', unicode(item_location))
+            return None
+        # Remove item from the list of children of old parent.
+        if source_item.location in old_parent_item.children:
+            old_parent_item.children.remove(source_item.location)
+            self.update_item(old_parent_item, user_id)
+            log.info(
+                '%s removed from %s children',
+                unicode(source_item.location),
+                unicode(old_parent_item.location)
+            )
 
-            if item.location in parent_item.children:
-                parent_item.children.remove(item.location)
-                self.update_item(parent_item, user_id)
+        # Add item to new parent at particular location.
+        if source_item.location not in new_parent_item.children:
+            insert_at = insert_at if insert_at is not None else len(new_parent_item.children)
+            new_parent_item.children.insert(insert_at, source_item.location)
+            self.update_item(new_parent_item, user_id)
+            log.info(
+                '%s added to %s children',
+                unicode(source_item.location),
+                unicode(old_parent_item.location)
+            )
 
-            # Update parent attribute of the item block
-            item.parent = source_parent_location
-            self.update_item(item, user_id)
-
-            return item.location
+        # Update parent attribute of the item block
+        source_item.parent = new_parent_location
+        self.update_item(source_item, user_id)
+        log.info(
+            '%s parent updated to %s',
+            unicode(source_item.location),
+            unicode(old_parent_item.location)
+        )
+        return source_item.location
 
 
 class UnsupportedRevisionError(ValueError):
