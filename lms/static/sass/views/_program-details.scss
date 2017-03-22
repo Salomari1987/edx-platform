@@ -76,3 +76,287 @@
         padding: 0 $full-width-banner-margin/4;
     }
 }
+
+// CSS for April 2017 version of Program Details Page
+.program-details {
+    .window-wrap {
+        background-color: rgb(252,252,252);
+    }
+}
+.program-details-wrapper {
+
+    .program-details-header {
+        margin-left: 30px;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        margin-right: 80px;
+        display: flex;
+        color: black;
+        font-family: 'Open Sans';
+        font-weight: normal;
+
+
+        .meta-info {
+            margin: 0;
+            width: 75%;
+        }
+
+        .program-details-icon {
+            margin-left: 3px;
+            margin-top: 10px;
+            height: auto;
+        }
+
+        .micromasters {
+            fill: #065784;
+            width: 250px;
+        }
+
+        .xseries {
+            fill: #065784;
+            width: 200px;
+        }
+
+        .professional.certificate {
+            fill: #065784;
+            width: 300px;
+        }
+
+        .authoring-organizations {
+            text-align: center;
+            width: 25%;
+
+            .heading {
+                font-family: "Open Sans";
+                font-weight: bold;
+                color: #065784;
+                font-size: 0.9375em;
+            }
+        }
+        .orgs .org-logo {
+            width: 46.5%;
+            margin-left: 2.5%;
+            height: auto;
+        }
+    }
+
+    .program-details-header {
+        margin-left: 30px;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        margin-right: 80px;
+        display: flex;
+    }
+    .meta-info {
+        margin: 0;
+        width: 75%;
+    }
+    .program-details-icon {
+        margin-left: 3px;
+        margin-top: 10px;
+        width: 300px;
+        height: auto;
+    }
+    .micromasters {
+        fill: #065784;
+        width: 250px;
+    }
+    .xseries {
+        fill: #065784;
+        width: 200px;
+    }
+    .professional.certificate {
+        fill: #065784;
+    }
+    .authoring-organizations {
+        text-align: center;
+        width: 25%;
+    }
+    .authoring-organizations .heading {
+        font-family: "Open Sans";
+        font-weight: bold;
+        color: #065784;
+        font-size: 0.9375em;
+    }
+    .orgs .org-logo {
+        width: 46.5%;
+        margin-left: 2.5%;
+        height: auto;
+    }
+
+    .program-details-content {
+        margin-left: 30px;
+    }
+    .course-list-heading {
+        font-family: "Open Sans";
+        font-weight: bold;
+        color: #065784;
+        font-size: 0.9375em;
+        line-height: normal;
+        margin: 0;
+
+        .status {
+            margin-right: 7px;
+        }
+    }
+
+    .course-list > div:nth-of-type(even) {
+        background-color: #f9fafc;
+    }
+
+    .course-list-headings {
+        width: 700px;
+
+        hr {
+            margin-left: 0;
+            margin-bottom: 20px;
+            background-color: #BBC7D2;
+            height: 2px;
+            width: 700px;
+            border: none;
+        }
+    }
+
+    .program-heading {
+        width: 70%;
+        margin-top: 80px;
+        margin-bottom: 40px;
+
+        .program-heading-title {
+            font-family: "Open Sans";
+            font-weight: 600;
+            font-size: 1.3em;
+            color: #373737;
+            margin-bottom: 0 0 5px 0;
+            line-height: normal;
+        }
+
+        .program-heading-message {
+            font-weight: 300;
+        }
+    }
+
+    .course-enroll-view {
+        .enroll-button {
+            background-color: #3C5E7E;
+            height: 37px;
+            width: 128px;
+            border-radius: 0;
+            padding: 0;
+            margin-top: 6px;
+        }
+        .select-choice {
+            font-family: "Open Sans";
+            font-weight: bold;
+            font-size: 0.9375em;
+            color: #2c3e50;
+            margin-top: 6px;
+            margin-right: 2px;
+        }
+        .run-select-container {
+            display: flex;
+            margin-top: 8px;
+        }
+        .run-select {
+            width: 340px;
+            height: 34px;
+        }
+    }
+   
+    .program-course-card {
+        width: 100%;
+        height: 100px;
+
+        .section {
+            display: flex;
+            justify-content: space-between;
+            margin-left: 20px;
+            margin-right: 40px;
+        }
+
+        .course-details {
+            float: none;
+
+            .course-title { 
+                font-size: 1em;
+                color: #0976b5;
+                font-weight: 600;
+                text-decoration: underline;
+                margin-bottom: 5px;
+            }
+
+            .run-period {
+                color: #292929;
+                font-size: 0.9375em;
+            }
+        }
+
+        .course-meta-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .course-actions {
+            display: flex;
+            flex-direction: column;
+
+            .course-enroll-view {
+                display: flex;
+                justify-content: space-between;
+            }
+        }
+
+        .certificate-status {
+            .fa-check-circle {
+                color: #006d01;
+            }
+
+            .card-msg {
+                font-family: "Open Sans";
+                font-weight: bold;
+                font-size: 0.9375em;
+                color: #2c3e50;
+            }
+
+            .certificate-status-msg {
+                color: #292929;
+                font-size: 0.9375em;
+            }
+        }
+
+        .upgrade-message {
+            .upgrade-button {
+                background: #006d01;
+                border-color: #006d01;
+                height: 37px;
+                width: 128px;
+                border-radius: 0;
+                padding: 5px;
+                text-align: center;
+            }
+
+            .action {
+                margin-top: -25px;
+            }
+
+            .certificate-status{
+                padding-top: 8px;
+
+                .card-msg {
+                    font-family: "Open Sans";
+                    font-weight: bold;
+                    font-size: 0.9375em;
+                    color: #2c3e50;
+                }
+
+                .price {
+                    color: #006d01;
+                    font-weight: bold;
+                }
+            }
+
+        }
+
+    }
+}

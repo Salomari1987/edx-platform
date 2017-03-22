@@ -15,6 +15,7 @@ from openedx.core.djangolib.js_utils import (
 <%static:require_module module_name="js/learner_dashboard/program_details_factory_2017" class_name="ProgramDetailsFactory2017">
 ProgramDetailsFactory2017({
     programData: ${program_data | n, dump_js_escaped_json},
+    courseData: ${courses_progress | n, dump_js_escaped_json},
     urls: ${urls | n, dump_js_escaped_json},
     userPreferences: ${user_preferences | n, dump_js_escaped_json},
 });
@@ -25,5 +26,5 @@ ProgramDetailsFactory2017({
 <%block name="bodyclass">program-details</%block>
 
 <main id="main" aria-label="Content" tabindex="-1">
-    <div class="js-program-details-wrapper"></div>
+    <div class="js-program-details-wrapper program-details-wrapper"></div>
 </main>

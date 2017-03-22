@@ -58,7 +58,7 @@ class ProgramProgressMeter(object):
     Keyword Arguments:
         enrollments (list): List of the user's enrollments.
     """
-    def __init__(self, user, enrollments=None):
+    def __init__(self, user, enrollments=None, uuid=None):
         self.user = user
 
         self.enrollments = enrollments or list(CourseEnrollment.enrollments_for_user(self.user))
@@ -67,7 +67,10 @@ class ProgramProgressMeter(object):
         # enrollment.course_id is really a CourseKey (╯ಠ_ಠ）╯︵ ┻━┻
         self.course_run_ids = [unicode(e.course_id) for e in self.enrollments]
 
-        self.programs = attach_program_detail_url(get_programs())
+        if uuid:
+            self.program = get_programs(uuid=uuid)
+        else:
+            self.programs = attach_program_detail_url(get_programs())
 
     def invert_programs(self):
         """Intersect programs and enrollments.
@@ -149,6 +152,24 @@ class ProgramProgressMeter(object):
         return progress
 
     @property
+    def courses_progress(self):
+        """Gauge a user's progress towards completion of a specific program by course.
+
+        Returns:
+            dict, containing courses grouped by completed, in_progress and remaining.
+        """
+        progress = defaultdict(list)
+        for course in self.program['courses']:
+            if self._is_course_complete(course):
+                progress['completed'].append(course)
+            elif self._is_course_in_progress(course):
+                progress['in_progress'].append(course)
+            else:
+                progress['remaining'].append(course)
+
+        return progress
+
+    @property
     def completed_programs(self):
         """Identify programs completed by the student.
 
@@ -211,11 +232,12 @@ class ProgramProgressMeter(object):
             list of dicts, each representing a course run certificate
         """
         course_run_certificates = certificate_api.get_certificates_for_user(self.user.username)
-        return [
+        completed_course_runs = [
             {'course_run_id': unicode(certificate['course_key']), 'type': certificate['type']}
             for certificate in course_run_certificates
             if certificate_api.is_passing_status(certificate['status'])
         ]
+        return completed_course_runs
 
     def _is_course_in_progress(self, course):
         """Check if a user is in the process of completing a course.

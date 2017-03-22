@@ -115,12 +115,30 @@
                     return DateUtils.localize(context);
                 },
 
+                getCertificatePriceString(run){
+                    var verified_seat, currency;
+                    if ('seats' in run && run['seats'].length) {
+                        verified_seat = _.filter(run['seats'], function(seat){
+                            if (seat['type'] === 'verified' || seat['type'] === 'professional' || seat['type'] === 'credit'){
+                                return seat;
+                            }
+                        })[0]
+                        currency = verified_seat['currency'];
+                        if (currency === 'USD'){
+                            return '$' + verified_seat['price'];
+                        } else {
+                            return verified_seat['price'] + " " + currency;
+                        }
+                    }
+                    return null;
+                },
+
                 setActiveCourseRun: function(courseRun, userPreferences) {
                     var startDateString,
                         courseImageUrl;
 
                     if (courseRun) {
-                        if (courseRun.advertised_start !== undefined && courseRun.advertised_start !== 'None') {
+                        if (courseRun.advertised_start !== undefined && courseRun.advertised_start !== 'None' && courseRun.advertised_start !== null) {
                             startDateString = courseRun.advertised_start;
                         } else {
                             startDateString = this.formatDate(courseRun.start, userPreferences);
@@ -148,7 +166,8 @@
                             mode_slug: courseRun.type,
                             start_date: startDateString,
                             upcoming_course_runs: this.getUpcomingCourseRuns(),
-                            upgrade_url: courseRun.upgrade_url
+                            upgrade_url: courseRun.upgrade_url,
+                            price: this.getCertificatePriceString(courseRun)
                         });
                     }
                 },

@@ -25,7 +25,7 @@
                 },
 
                 render: function() {
-                    var childList;
+                    var childList, count;
 
                     if (!this.collection.length) {
                         if (this.context.marketingUrl) {
@@ -47,6 +47,10 @@
                             this.$el.before(HtmlUtils.ensureHtml(this.getTitleHtml()).toString());
                         }
 
+                        count = this.$el.parent().find('.count')
+                        if (count) {
+                            count.html(childList.length)
+                        }
                         this.$el.html(childList);
                     }
                 },

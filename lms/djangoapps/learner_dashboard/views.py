@@ -50,7 +50,8 @@ def program_details(request, program_uuid):
     if not programs_config.enabled:
         raise Http404
 
-    program_data = get_programs(uuid=program_uuid)
+    meter = ProgramProgressMeter(request.user, uuid=program_uuid)
+    program_data = meter.program
     if not program_data:
         raise Http404
 
@@ -66,6 +67,7 @@ def program_details(request, program_uuid):
 
     context = {
         'program_data': program_data,
+        'courses_progress': meter.courses_progress,
         'urls': urls,
         'show_program_listing': programs_config.enabled,
         'nav_hidden': True,
