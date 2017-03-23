@@ -258,6 +258,7 @@ describe 'Problem', ->
       expect(@problem.submitButton).not.toHaveAttr('disabled')
 
   describe 'submit button on problems', ->
+
     beforeEach ->
       @problem = new Problem($('.xblock-student_view'))
       @submitDisabled = (disabled) =>
@@ -274,15 +275,11 @@ describe 'Problem', ->
         @submitDisabled true
 
     describe 'some advanced tests for submit button', ->
+      radioButtonProblemHtml = readFixtures('radiobutton_problem.html')
+      checkboxProblemHtml = readFixtures('checkbox_problem.html')
+
       it 'should become enabled after a checkbox is checked', ->
-        html = '''
-        <div class="choicegroup">
-        <label for="input_1_1_1"><input type="checkbox" name="input_1_1" id="input_1_1_1" value="1"> One</label>
-        <label for="input_1_1_2"><input type="checkbox" name="input_1_1" id="input_1_1_2" value="2"> Two</label>
-        <label for="input_1_1_3"><input type="checkbox" name="input_1_1" id="input_1_1_3" value="3"> Three</label>
-        </div>
-        '''
-        $('#input_example_1').replaceWith(html)
+        $('#input_example_1').replaceWith(checkboxProblemHtml)
         @problem.submitAnswersAndSubmitButton true
         @submitDisabled true
         $('#input_1_1_1').click()
@@ -291,14 +288,7 @@ describe 'Problem', ->
         @submitDisabled true
 
       it 'should become enabled after a radiobutton is checked', ->
-        html = '''
-        <div class="choicegroup">
-        <label for="input_1_1_1"><input type="radio" name="input_1_1" id="input_1_1_1" value="1"> One</label>
-        <label for="input_1_1_2"><input type="radio" name="input_1_1" id="input_1_1_2" value="2"> Two</label>
-        <label for="input_1_1_3"><input type="radio" name="input_1_1" id="input_1_1_3" value="3"> Three</label>
-        </div>
-        '''
-        $('#input_example_1').replaceWith(html)
+        $('#input_example_1').replaceWith(radioButtonProblemHtml)
         @problem.submitAnswersAndSubmitButton true
         @submitDisabled true
         $('#input_1_1_1').attr('checked', true).trigger('click')
@@ -325,14 +315,7 @@ describe 'Problem', ->
         @submitDisabled true
 
       it 'should become enabled after a radiobutton is checked and a value is entered into the text box', ->
-        html = '''
-        <div class="choicegroup">
-        <label for="input_1_1_1"><input type="radio" name="input_1_1" id="input_1_1_1" value="1"> One</label>
-        <label for="input_1_1_2"><input type="radio" name="input_1_1" id="input_1_1_2" value="2"> Two</label>
-        <label for="input_1_1_3"><input type="radio" name="input_1_1" id="input_1_1_3" value="3"> Three</label>
-        </div>
-        '''
-        $(html).insertAfter('#input_example_1')
+        $(radioButtonProblemHtml).insertAfter('#input_example_1')
         @problem.submitAnswersAndSubmitButton true
         @submitDisabled true
         $('#input_1_1_1').attr('checked', true).trigger('click')
@@ -802,3 +785,42 @@ describe 'Problem', ->
 
       # verify that codemirror textarea has correct `aria-describedby` attribute value
       expect($(CodeMirrorTextArea).attr('aria-describedby')).toEqual('cm-editor-exit-message-101 status_101')
+
+
+  describe 'show answer button', ->
+
+    radioButtonProblemHtml = readFixtures('radiobutton_problem.html')
+    checkboxProblemHtml = readFixtures('checkbox_problem.html')
+
+    beforeEach ->
+      @problem = new Problem($('.xblock-student_view'))
+
+      @clickShowAnswer = (ProblemHtml) =>
+        $('#input_example_1').replaceWith(ProblemHtml)
+        $('#input_1_1_1').attr('checked', true)
+        @problem.el.find('.show').trigger('click')
+        @problem.el.find('div.choicegroup label:nth-child(2)').addClass('choicegroup_correct')
+        @problem.el.find('div.choicegroup .choicegroup_correct').append('<span class="status correct"></span>')
+        @problem.el.find('.show').attr('disabled', 'disabled')
+
+      @submitCheckboxOrRadio = =>
+        # verify that by changing the selected answer, 'show answer button is no longer disabled'
+        expect(@problem.el.find('.show').attr('disabled')).not.toEqual('disabled')
+
+        # verify that displayed answer dispapears
+        expect(@problem.el.find('div.choicegroup')).not.toHaveClass('choicegroup_correct')
+
+        # verify that radio/checkbox label has no span having class '.status.correct'
+        expect(@problem.el.find('div.choicegroup')).not.toHaveAttr('span.status.correct')
+
+    it 'should become enabled after a radiobutton is selected', ->
+      @clickShowAnswer radioButtonProblemHtml
+      @problem.submitAnswersAndSubmitButton true
+      $('#input_1_1_2').attr('checked', true).trigger('click')
+      @submitCheckboxOrRadio()
+
+    it 'should become enabled after a checkbox is selected', ->
+      @clickShowAnswer checkboxProblemHtml
+      @problem.submitAnswersAndSubmitButton true
+      $('#input_1_1_2').click()
+      @submitCheckboxOrRadio()
