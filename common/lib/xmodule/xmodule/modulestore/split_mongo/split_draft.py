@@ -443,9 +443,9 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
                     self._get_block_from_structure(published_course_structure, root_block_id)
                 )
                 block = self._get_block_from_structure(new_structure, root_block_id)
+                original_parent_location = location.course_key.make_usage_key(root_block_id.type, root_block_id.id)
                 for child_block_id in block.fields.get('children', []):
                     item_location = location.course_key.make_usage_key(child_block_id.type, child_block_id.id)
-                    original_parent_location = location.course_key.make_usage_key(root_block_id.type, root_block_id.id)
                     self.update_parent_if_moved(item_location, original_parent_location, new_structure, user_id)
                     copy_from_published(child_block_id)
             copy_from_published(BlockKey.from_usage_key(location))
@@ -470,10 +470,11 @@ class DraftVersioningModuleStore(SplitMongoModuleStore, ModuleStoreDraftAndPubli
         for block_key in parent_block_keys:
             # Item's parent is different than its new parent - so it has moved.
             if block_key.id != original_parent_location.block_id:
+                old_parent_location = original_parent_location.course_key.make_usage_key(block_key.type, block_key.id)
                 self.remove_update_item_parent(
                     item_location=item_location,
                     new_parent_location=original_parent_location,
-                    old_parent_location=original_parent_location.course_key.make_usage_key(block_key.type, block_key.id),
+                    old_parent_location=old_parent_location,
                     user_id=user_id
                 )
 

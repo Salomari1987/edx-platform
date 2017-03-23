@@ -811,8 +811,6 @@ class DraftModuleStore(MongoModuleStore):
                 item = versions_found[0]
                 assert item.get('_id').get('revision') != MongoRevisionKey.draft
                 for child in item.get('definition', {}).get('children', []):
-                    item_key = location.course_key.make_usage_key_from_deprecated_string(child)
-                    self.update_parent_if_moved(item_key, location, user_id)
                     child_loc = Location.from_deprecated_string(child)
                     delete_draft_only(child_loc)
 
@@ -834,7 +832,7 @@ class DraftModuleStore(MongoModuleStore):
                 source_item = self.get_item(item_location)
             except ItemNotFoundError:
                 log.error('Unable to find the item %s', unicode(item_location))
-                return
+                return None
             if source_item.parent and source_item.parent.block_id != original_parent_location.block_id:
                 if self.remove_update_item_parent(
                     item_location=item_location,

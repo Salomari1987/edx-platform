@@ -141,24 +141,24 @@ class ModuleStoreDraftAndPublished(BranchSettingMixin, BulkOperationsMixin):
     def remove_update_item_parent(self, item_location, new_parent_location, old_parent_location, user_id,
                                   insert_at=None):
         """
-        Removes block reference for old parent and attacehs to new parent.
+        Removes block reference for old parent and attaches to new parent.
 
         Arguments:
             item_location (BlockUsageLocator)    : Locator of item.
             new_parent_location (BlockUsageLocator)  : New parent block locator.
             old_parent_location (BlockUsageLocator)  : Old parent block locator.
+            user_id (int)   : User id.
             insert_at (int) : Insert item at the particular index in new parent.
-            user_id (int)   : User id
 
         Returns:
-           location or None:    source item location if updated otherwise None.
+           BlockUsageLocator or None: Source item location if updated, otherwise None.
         """
         try:
             source_item = self.get_item(item_location)
             old_parent_item = self.get_item(old_parent_location)
             new_parent_item = self.get_item(new_parent_location)
-        except ItemNotFoundError:
-            log.error('Unable to find the item %s', unicode(item_location))
+        except ItemNotFoundError as exception:
+            log.error('Unable to find the item : %s', exception.message)
             return None
         # Remove item from the list of children of old parent.
         if source_item.location in old_parent_item.children:
@@ -172,13 +172,15 @@ class ModuleStoreDraftAndPublished(BranchSettingMixin, BulkOperationsMixin):
 
         # Add item to new parent at particular location.
         if source_item.location not in new_parent_item.children:
-            insert_at = insert_at if insert_at is not None else len(new_parent_item.children)
-            new_parent_item.children.insert(insert_at, source_item.location)
+            if insert_at is not None:
+                new_parent_item.children.insert(insert_at, source_item.location)
+            else:
+                new_parent_item.children.append(source_item.location)
             self.update_item(new_parent_item, user_id)
             log.info(
                 '%s added to %s children',
                 unicode(source_item.location),
-                unicode(old_parent_item.location)
+                unicode(new_parent_item.location)
             )
 
         # Update parent attribute of the item block
@@ -187,7 +189,7 @@ class ModuleStoreDraftAndPublished(BranchSettingMixin, BulkOperationsMixin):
         log.info(
             '%s parent updated to %s',
             unicode(source_item.location),
-            unicode(old_parent_item.location)
+            unicode(new_parent_item.location)
         )
         return source_item.location
 
