@@ -148,6 +148,36 @@ class VideoEventsTest(VideoEventsTestMixin):
         }
         assert_events_equal(static_fields_pattern, load_video_event)
 
+    def test_event_data_for_hls(self):
+        """
+        Scenario: Video component with HLS vide emits events correctly
+
+        Given the course has a Video component with Youtube, HTML5 and HLS sources available.
+        And I play the video
+        And the video starts playing
+        And I watch 3 seconds of it
+        Then I pause the video
+        Then I seek the video
+        Then I play the video until it ends
+        Then I verify that all triggered video events has correct data
+        """
+        def is_video_event(event):
+            """Filter out anything other than the video events of interest"""
+            return event['event_type'] in ('load_video', 'play_video', 'pause_video', 'seek_video')
+
+        captured_events = []
+        with self.capture_events(is_video_event, captured_events=captured_events):
+            self.metadata = self.metadata_for_mode('hls')
+            self.navigate_to_video()
+            self.video.click_player_button('play')
+            self.video.wait_for_position('0:03')
+            self.video.click_player_button('pause')
+            self.video.seek('0:08')
+            self.video.click_player_button('play')
+
+        for event in captured_events:
+            self.assertEqual(event['code'], 'HLS')
+
 
 @attr(shard=8)
 @ddt.ddt
