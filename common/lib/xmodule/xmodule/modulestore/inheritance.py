@@ -222,6 +222,15 @@ class InheritanceMixin(XBlockMixin):
         scope=Scope.settings
     )
 
+    show_lti_request_learner_info_fields = Boolean(
+        display_name=_('Show LTI request learner information fields'),
+        help=_(
+            'Set this to "true" to show request username and request email fields on LTI consumer.'
+        ),
+        default=True,
+        scope=Scope.settings
+    )
+
 
 def compute_inherited_metadata(descriptor):
     """Given a descriptor, traverse all of its descendants and do metadata

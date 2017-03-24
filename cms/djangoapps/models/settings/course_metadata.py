@@ -59,12 +59,19 @@ class CourseMetadata(object):
     ]
 
     @classmethod
-    def filtered_list(cls):
+    def filtered_list(cls, user):
         """
         Filter fields based on feature flag, i.e. enabled, disabled.
+
+        Parameters:
+            user (User): requesting user.
         """
         # Copy the filtered list to avoid permanently changing the class attribute.
         filtered_list = list(cls.FILTERED_LIST)
+
+        # Do not show show_lti_request_learner_info_fields if user is neither superuser nor staff.
+        if not (user.is_superuser or user.is_staff):
+            filtered_list.append('show_lti_request_learner_info_fields')
 
         # Do not show giturl if feature is not enabled.
         if not settings.FEATURES.get('ENABLE_EXPORT_GIT'):
@@ -103,7 +110,7 @@ class CourseMetadata(object):
         return filtered_list
 
     @classmethod
-    def fetch(cls, descriptor):
+    def fetch(cls, descriptor, user):
         """
         Fetch the key:value editable course details for the given course from
         persistence and return a CourseMetadata model.
@@ -111,7 +118,7 @@ class CourseMetadata(object):
         result = {}
         metadata = cls.fetch_all(descriptor)
         for key, value in metadata.iteritems():
-            if key in cls.filtered_list():
+            if key in cls.filtered_list(user):
                 continue
             result[key] = value
         return result
@@ -140,7 +147,7 @@ class CourseMetadata(object):
 
         Ensures none of the fields are in the blacklist.
         """
-        filtered_list = cls.filtered_list()
+        filtered_list = cls.filtered_list(user)
         # Don't filter on the tab attribute if filter_tabs is False.
         if not filter_tabs:
             filtered_list.remove("tabs")
@@ -176,7 +183,7 @@ class CourseMetadata(object):
             errors: list of error objects
             result: the updated course metadata or None if error
         """
-        filtered_list = cls.filtered_list()
+        filtered_list = cls.filtered_list(user)
         if not filter_tabs:
             filtered_list.remove("tabs")
 
@@ -212,4 +219,4 @@ class CourseMetadata(object):
         if save and len(key_values):
             modulestore().update_item(descriptor, user.id)
 
-        return cls.fetch(descriptor)
+        return cls.fetch(descriptor, user)

@@ -1215,12 +1215,12 @@ def advanced_settings_handler(request, course_key_string):
 
             return render_to_response('settings_advanced.html', {
                 'context_course': course_module,
-                'advanced_dict': CourseMetadata.fetch(course_module),
+                'advanced_dict': CourseMetadata.fetch(course_module, request.user),
                 'advanced_settings_url': reverse_course_url('advanced_settings_handler', course_key)
             })
         elif 'application/json' in request.META.get('HTTP_ACCEPT', ''):
             if request.method == 'GET':
-                return JsonResponse(CourseMetadata.fetch(course_module))
+                return JsonResponse(CourseMetadata.fetch(course_module, request.user))
             else:
                 try:
                     # validate data formats and update the course module.
