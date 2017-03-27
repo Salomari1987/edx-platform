@@ -1334,7 +1334,11 @@ class HLSVideoTest(VideoBaseTest):
     """ Test related to HLS video """
 
     def setUp(self):
-        super(HLSVideoTest, self).setUp()
+        """
+        Run video tests in chrome.
+        """
+        with patch.dict(os.environ, {'SELENIUM_BROWSER': 'chrome'}):
+            super(HLSVideoTest, self).setUp()
 
     def test_video_play_pause(self):
         """
