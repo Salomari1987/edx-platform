@@ -12,6 +12,7 @@ from django.views.generic import View
 
 from courseware.courses import get_course_with_access
 from opaque_keys.edx.keys import CourseKey
+from openedx.core.lib.new_relic_utils import add_new_relic_course_key_metrics
 from util.views import ensure_valid_course_key
 
 from course_outline import CourseOutlineFragmentView
@@ -35,6 +36,7 @@ class CourseHomeView(View):
         """
         course_key = CourseKey.from_string(course_id)
         course = get_course_with_access(request.user, 'load', course_key, check_if_enrolled=True)
+        add_new_relic_course_key_metrics(course_key)
 
         # Render the outline as a fragment
         outline_fragment = CourseOutlineFragmentView().render_to_fragment(request, course_id=course_id)
