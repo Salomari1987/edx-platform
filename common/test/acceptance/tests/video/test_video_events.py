@@ -175,7 +175,9 @@ class VideoEventsTest(VideoEventsTestMixin):
             self.video.seek('0:08')
             self.video.click_player_button('play')
 
+        import sys
         for event in captured_events:
+            print >> sys.stderr,  event
             self.assertEqual(event['code'], 'HLS')
 
 
