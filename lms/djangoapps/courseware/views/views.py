@@ -40,7 +40,7 @@ from opaque_keys.edx.keys import CourseKey, UsageKey
 from rest_framework import status
 from lms.djangoapps.instructor.views.api import require_global_staff
 from lms.djangoapps.ccx.utils import prep_course_for_grading
-from lms.djangoapps.grades.new.course_grade import CourseGradeFactory
+from lms.djangoapps.grades.new.course_grade_factory import CourseGradeFactory
 from lms.djangoapps.instructor.enrollment import uses_shib
 from lms.djangoapps.verify_student.models import SoftwareSecurePhotoVerification
 from lms.djangoapps.ccx.custom_exception import CCXLocatorValidationException
@@ -814,11 +814,18 @@ def _progress(request, course_key, student_id):
         except ValueError:
             raise Http404
 
+    course = get_course_with_access(request.user, 'load', course_key)
+
     # If the user is sponsored by an enterprise customer, and we still need to get data
     # sharing consent, redirect to do that first.
     consent_url = get_enterprise_consent_url(request, unicode(course.id), return_to='progress')
     if consent_url:
         return redirect(consent_url)
+
+    # check to see if there is a required survey that must be taken before
+    # the user can access the course.
+    if survey.utils.must_answer_survey(course, request.user):
+        return redirect(reverse('course_survey', args=[unicode(course.id)]))
 
     staff_access = bool(has_access(request.user, 'staff', course))
 
@@ -826,7 +833,6 @@ def _progress(request, course_key, student_id):
     if student_id is None or student_id == request.user.id:
         # This will be a no-op for non-staff users, returning request.user
         masquerade, student = setup_masquerade(request, course_key, staff_access, reset_masquerade_data=True)
-        student = User.objects.prefetch_related("groups").get(id=student.id)
     else:
         try:
             coach_access = has_ccx_coach_role(request.user, course_key)
@@ -838,23 +844,22 @@ def _progress(request, course_key, student_id):
         if not has_access_on_students_profiles:
             raise Http404
         try:
-            # The pre-fetching of groups is done to make auth checks not require an
-            # additional DB lookup (this kills the Progress page in particular).
-            student = User.objects.prefetch_related("groups").get(id=student_id)
+            student = User.objects.get(id=student_id)
         except User.DoesNotExist:
             raise Http404
 
     # NOTE: To make sure impersonation by instructor works, use
     # student instead of request.user in the rest of the function.
 
-    course = get_course_with_access(student, 'load', course_key, depth=None, check_if_enrolled=True)
+    # The pre-fetching of groups is done to make auth checks not require an
+    # additional DB lookup (this kills the Progress page in particular).
+    student = User.objects.prefetch_related("groups").get(id=student.id)
 
-    # check to see if there is a required survey that must be taken before
-    # the user can access the course.
-    if not staff_access and survey.utils.must_answer_survey(course, request.user):
-        return redirect(reverse('course_survey', args=[unicode(course.id)]))
-
+    if student_id != request.user.id:
+        # refetch the course as the assumed student
+        course = get_course_with_access(student, 'load', course_key, check_if_enrolled=True)
     prep_course_for_grading(course, request)
+
     course_grade = CourseGradeFactory().create(student, course)
     courseware_summary = course_grade.chapter_grades.values()
     grade_summary = course_grade.summary

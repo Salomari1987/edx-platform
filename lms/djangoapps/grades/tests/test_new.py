@@ -26,8 +26,8 @@ from xmodule.modulestore.tests.utils import TEST_DATA_DIR
 from xmodule.modulestore.xml_importer import import_course_from_xml
 
 from ..models import PersistentSubsectionGrade
-from ..new.course_grade import CourseGradeFactory
-from ..new.subsection_grade import SubsectionGrade, SubsectionGradeFactory
+from ..new.course_grade_factory import CourseGradeFactory
+from ..new.subsection_grade_factory import SubsectionGrade, SubsectionGradeFactory
 from .utils import mock_get_score, mock_get_submissions_score
 
 
@@ -211,7 +211,7 @@ class TestSubsectionGradeFactory(ProblemSubmissionTestMixin, GradeTestBase):
             wraps=PersistentSubsectionGrade.create_grade
         ) as mock_create_grade:
             with patch(
-                'lms.djangoapps.grades.new.subsection_grade.SubsectionGradeFactory._get_bulk_cached_grade',
+                'lms.djangoapps.grades.new.subsection_grade_factory.SubsectionGradeFactory._get_bulk_cached_grade',
                 wraps=self.subsection_grade_factory._get_bulk_cached_grade
             ) as mock_get_bulk_cached_grade:
                 with self.assertNumQueries(12):

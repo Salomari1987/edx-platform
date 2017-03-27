@@ -30,7 +30,7 @@ from util.date_utils import from_timestamp
 from xmodule.modulestore.django import modulestore
 
 from .constants import ScoreDatabaseTableEnum
-from .new.subsection_grade import SubsectionGradeFactory
+from .new.subsection_grade_factory import SubsectionGradeFactory
 from .signals.signals import SUBSECTION_SCORE_CHANGED
 from .transformer import GradesTransformer
 

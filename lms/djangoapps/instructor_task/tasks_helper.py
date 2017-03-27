@@ -41,7 +41,7 @@ from certificates.models import (
 )
 from courseware.courses import get_course_by_id, get_problems_in_section
 from lms.djangoapps.grades.context import grading_context_for_course
-from lms.djangoapps.grades.new.course_grade import CourseGradeFactory
+from lms.djangoapps.grades.new.course_grade_factory import CourseGradeFactory
 from courseware.model_data import DjangoKeyValueStore, FieldDataCache
 from courseware.models import StudentModule
 from courseware.module_render import get_module_for_descriptor_internal
@@ -836,7 +836,9 @@ def upload_grades_csv(_xmodule_instance_args, _entry_id, course_id, _task_input,
                     else:
                         grade_results.append([u'Not Attempted'])
             if assignment_info['use_subsection_headers']:
-                assignment_average = course_grade.grade_value['grade_breakdown'].get(assignment_type, {}).get('percent')
+                assignment_average = course_grade.grader_result['grade_breakdown'].get(assignment_type, {}).get(
+                    'percent'
+                )
                 grade_results.append([assignment_average])
 
         grade_results = list(chain.from_iterable(grade_results))
