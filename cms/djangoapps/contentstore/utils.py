@@ -18,7 +18,6 @@ from openedx.core.djangoapps.site_configuration.models import SiteConfiguration
 from xmodule.modulestore import ModuleStoreEnum
 from xmodule.modulestore.django import modulestore
 from xmodule.modulestore.exceptions import ItemNotFoundError
-from xmodule.split_test_module import get_split_user_partitions
 from opaque_keys.edx.keys import UsageKey, CourseKey
 from student.roles import CourseInstructorRole, CourseStaffRole
 from student.models import CourseEnrollment
@@ -295,10 +294,11 @@ def get_group_display_name(user_partitions, xblock_display_name):
     Returns:
         group name (String): Group name of the matching group.
     """
-    for user_partition in get_split_user_partitions(user_partitions):
-        for group in user_partition['groups']:
-            if _(u'Group ID {group_id}').format(group_id=group['id']) == xblock_display_name:
-                return group['name']
+    for user_partition in user_partitions:
+        if user_partition['scheme'] == 'random':
+            for group in user_partition['groups']:
+                if _(u'Group ID {group_id}').format(group_id=group['id']) == xblock_display_name:
+                    return group['name']
 
 
 def get_user_partition_info(xblock, schemes=None, course=None):
