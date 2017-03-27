@@ -154,16 +154,17 @@ class ModuleStoreDraftAndPublished(BranchSettingMixin, BulkOperationsMixin):
            BlockUsageLocator or None: Source item location if updated, otherwise None.
         """
         try:
-            source_item = self.get_item(item_location)
-            old_parent_item = self.get_item(old_parent_location)
-            new_parent_item = self.get_item(new_parent_location)
+            source_item = self.get_item(item_location)  # pylint: disable=no-member
+            old_parent_item = self.get_item(old_parent_location)    # pylint: disable=no-member
+            new_parent_item = self.get_item(new_parent_location)    # pylint: disable=no-member
         except ItemNotFoundError as exception:
             log.error('Unable to find the item : %s', exception.message)
             return None
+
         # Remove item from the list of children of old parent.
         if source_item.location in old_parent_item.children:
             old_parent_item.children.remove(source_item.location)
-            self.update_item(old_parent_item, user_id)
+            self.update_item(old_parent_item, user_id)  # pylint: disable=no-member
             log.info(
                 '%s removed from %s children',
                 unicode(source_item.location),
@@ -176,7 +177,7 @@ class ModuleStoreDraftAndPublished(BranchSettingMixin, BulkOperationsMixin):
                 new_parent_item.children.insert(insert_at, source_item.location)
             else:
                 new_parent_item.children.append(source_item.location)
-            self.update_item(new_parent_item, user_id)
+            self.update_item(new_parent_item, user_id)  # pylint: disable=no-member
             log.info(
                 '%s added to %s children',
                 unicode(source_item.location),
@@ -185,7 +186,7 @@ class ModuleStoreDraftAndPublished(BranchSettingMixin, BulkOperationsMixin):
 
         # Update parent attribute of the item block
         source_item.parent = new_parent_location
-        self.update_item(source_item, user_id)
+        self.update_item(source_item, user_id)  # pylint: disable=no-member
         log.info(
             '%s parent updated to %s',
             unicode(source_item.location),

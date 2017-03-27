@@ -834,12 +834,7 @@ class DraftModuleStore(MongoModuleStore):
                 log.error('Unable to find the item %s', unicode(item_location))
                 return None
             if source_item.parent and source_item.parent.block_id != original_parent_location.block_id:
-                if self.remove_update_item_parent(
-                    item_location=item_location,
-                    new_parent_location=original_parent_location,
-                    old_parent_location=source_item.parent,
-                    user_id=user_id
-                ):
+                if self.remove_update_item_parent(item_location, original_parent_location, source_item.parent, user_id):
                     delete_draft_only(Location.from_deprecated_string(child_location))
 
     def _query_children_for_cache_children(self, course_key, items):
