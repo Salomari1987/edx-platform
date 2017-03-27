@@ -1,0 +1,8 @@
+<circle class="<%- classList %>"
+    r="<%- radius %>" cx="<%- x %>" cy="<%- y %>"
+    transform="rotate(<%- degrees %>, <%- x %>, <%- y %>)"
+    stroke-width="1.4"
+    fill="none"
+    stroke-dasharray="<%- dashArray %>"
+    stroke-dashoffset="<%- offset %>">
+</circle>
