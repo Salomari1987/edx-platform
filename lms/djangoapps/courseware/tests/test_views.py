@@ -868,7 +868,6 @@ class ViewsTestCase(ModuleStoreTestCase):
 
         self.assertIn(str(course), response.content)
 
-
     def _submit_financial_assistance_form(self, data):
         """Submit a financial assistance request."""
         url = reverse('submit_financial_assistance_request')
