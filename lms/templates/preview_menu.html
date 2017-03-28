@@ -11,19 +11,21 @@ from openedx.core.djangolib.markup import HTML, Text
 %>
 
 <%
-def selected(is_selected):
-  return "selected" if is_selected else ""
-
-show_preview_menu = staff_access and supports_preview_menu
-cohorted_user_partition = get_cohorted_user_partition(course)
-masquerade_user_name = masquerade.user_name if masquerade else None
-masquerade_group_id = masquerade.group_id if masquerade else None
-staff_selected = selected(not masquerade or masquerade.role != "student")
-specific_student_selected = selected(not staff_selected and masquerade.user_name)
-student_selected = selected(not staff_selected and not specific_student_selected and not masquerade_group_id)
+show_preview_menu = course and staff_access and supports_preview_menu
 %>
 
 % if show_preview_menu:
+    <%
+    def selected(is_selected):
+      return "selected" if is_selected else ""
+
+    cohorted_user_partition = get_cohorted_user_partition(course)
+    masquerade_user_name = masquerade.user_name if masquerade else None
+    masquerade_group_id = masquerade.group_id if masquerade else None
+    staff_selected = selected(not masquerade or masquerade.role != "student")
+    specific_student_selected = selected(not staff_selected and masquerade.user_name)
+    student_selected = selected(not staff_selected and not specific_student_selected and not masquerade_group_id)
+    %>
     <nav class="wrapper-preview-menu" aria-label="${_('Course View')}">
         <div class="preview-menu">
             <ol class="preview-actions">
