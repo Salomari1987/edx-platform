@@ -2,7 +2,9 @@
 
 import datetime
 import json
+from mock import patch
 from nose.plugins.attrib import attr
+import os
 import ddt
 
 from common.test.acceptance.tests.helpers import EventsTestMixin
@@ -148,6 +150,17 @@ class VideoEventsTest(VideoEventsTestMixin):
         }
         assert_events_equal(static_fields_pattern, load_video_event)
 
+
+class VideoHLSEventsTest(VideoEventsTestMixin):
+    """ Test video player event emission for HLS video """
+
+    def setUp(self):
+        """
+        Run test in chrome.
+        """
+        with patch.dict(os.environ, {'SELENIUM_BROWSER': 'chrome'}):
+            super(VideoHLSEventsTest, self).setUp()
+
     def test_event_data_for_hls(self):
         """
         Scenario: Video component with HLS vide emits events correctly
@@ -161,9 +174,11 @@ class VideoEventsTest(VideoEventsTestMixin):
         Then I play the video until it ends
         Then I verify that all triggered video events has correct data
         """
+        video_events = ('load_video', 'play_video', 'pause_video', 'seek_video')
+
         def is_video_event(event):
             """Filter out anything other than the video events of interest"""
-            return event['event_type'] in ('load_video', 'play_video', 'pause_video', 'seek_video')
+            return event['event_type'] in video_events
 
         captured_events = []
         with self.capture_events(is_video_event, captured_events=captured_events):
@@ -176,9 +191,9 @@ class VideoEventsTest(VideoEventsTestMixin):
             self.video.click_player_button('play')
 
         import sys
-        for event in captured_events:
-            print >> sys.stderr,  event
-            self.assertEqual(event['code'], 'HLS')
+        print >> sys.stderr,  captured_events
+        expected_events = [{'name': event, 'event': {'code': 'HLS'}} for event in video_events]
+        self.assert_events_match(expected_events, captured_events)
 
 
 @attr(shard=8)
